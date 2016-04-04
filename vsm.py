@@ -34,14 +34,15 @@ class VSM:
                     self.tf_idf[doc[0]][counter] = tf_func(doc[1], max_tf) * self.idf[counter]
                     self.v_length[doc[0]] += self.tf_idf[doc[0]][counter] ** 2
                 counter += 1
-        
+        for i in range(len(self.v_length)):
+            self.v_length[i] = (self.v_length[i]**(0.5))
     def cosine_similarity(self, query):
         similarity = [0 for _ in range(total_doc)]
         for i, doc in enumerate(self.tf_idf):
             for k, v in query.sparse.items():
                 if k in doc:
                     similarity[i] += doc[k]*v
-            similarity[i] = similarity[i]/(self.v_length[i]**(0.5))
+            similarity[i] = similarity[i]/(self.v_length[i])/(query.length)
         return sorted(list(zip(range(total_doc), similarity)), key=lambda x: x[1], reverse=True)
 
     def rank(self, output):

@@ -11,11 +11,14 @@ class Query:
     def __init__(self, number, grams, index):
         self.number = number
         self.sparse = dict()
+        self.length = 0.0
         for i, v in grams.items():
             if i in index:
                 for j, term in v.items():
                     if j in index[i]:
                         self.sparse[index[i][j]] = term
+                        self.length += term**2
+        self.length = (self.length**(0.5))
     def extract(token, vocab_index, grams):
         #unigram
         indexed = []

@@ -11,6 +11,7 @@ file_list = '/tmp3/ralph831005/IR/model/file-list'
 vocal_all = '/tmp3/ralph831005/IR/model/vocab.all'
 train_path = '/tmp3/ralph831005/IR/query/query-train.xml'
 test_path = '/tmp3/ralph831005/IR/query/query-test.xml'
+ans = '/tmp3/ralph831005/IR/query/ans-train'
 output_train = 'simple_train_vsm.txt'
 output_test = 'simple_test_vsm.txt'
 def main():
@@ -25,6 +26,7 @@ def main():
     vsm.rank(output_train)
     vsm.parse(test_path, vocab_index)
     vsm.rank(output_test)
+    eval(ans, output_train)
 def apk(actual, predicted):
     k = min(100, len(predicted))
     score, count = 0, 0
