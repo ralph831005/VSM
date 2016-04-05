@@ -3,6 +3,7 @@ import os
 import math
 import re
 from collections import defaultdict
+from scipy import sparse
 total_doc = 46972
 total_grams = 1193467
 start = { 'topic': '<topic>', 'number': '<number>', 'title': '<title>', 'question': '<question>', 'narrative': '<narrative>', 'concepts': '<concepts>' }
@@ -11,14 +12,13 @@ seperators = r'(?:、|，|。)'
 class Query:
     def __init__(self, number, grams, index):
         self.number = number
-        self.sparse = dict()
+        self.sparse = sparse.dok_matrix((total_grams, 1))
         self.length = 0.0
         for i, v in grams.items():
-            if i in index:
-                for j, term in v.items():
-                    if j in index[i]:
-                        self.sparse[index[i][j]] = term
-                        self.length += term**2
+            for j, term in v.items():
+                if (i*100000 + j) in index:
+                    self.sparse[index[i*100000+j], 0] = term
+                    self.length += term**2
         self.length = (self.length**(0.5))
     def extract(token, vocab_index, grams):
         #unigram

@@ -4,7 +4,7 @@ import os
 import math
 import sys
 from collections import defaultdict
-from vsm import VSM
+from vsm_sparse import VSM
 
 invert_file_path = '/tmp3/ralph831005/IR/model/inverted-file'
 file_list = '/tmp3/ralph831005/IR/model/file-list'
@@ -20,13 +20,14 @@ def main():
         for i, vocab in enumerate(fp):
             vocab_index[vocab.strip()] = i
 
-    vsm = VSM(invert_file_path, file_list)
+    #vsm = VSM(invert_file_path, file_list)
+    vsm = VSM('test.in', file_list)
     vsm.weight(tf_func = lambda tf, mtf: float(tf))
     vsm.parse(train_path, vocab_index)
     vsm.rank(output_train)
     vsm.parse(test_path, vocab_index)
     vsm.rank(output_test)
-    eval(ans, output_train)
+    print(eval(ans, output_train))
 def apk(actual, predicted):
     k = min(100, len(predicted))
     score, count = 0, 0
@@ -34,7 +35,6 @@ def apk(actual, predicted):
         if pred in actual:
             count += 1
             score += count/(i+1.0)
-    print(score/min(len(actual), k))
     return score/min(len(actual), k)
 def eval(ans_path, pred_path):
     ans_set = defaultdict(set)

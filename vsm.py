@@ -44,14 +44,11 @@ class VSM:
                     similarity[i] += doc[k]*v
             similarity[i] = similarity[i]/(self.v_length[i])/(query.length)
         return sorted(list(zip(range(total_doc), similarity)), key=lambda x: x[1], reverse=True)
-
     def rank(self, output):
         with open(output, 'w') as fp:
             for query in self.queries:
                 for result in self.cosine_similarity(query)[:100]:
-                    print(result)
                     fp.write(query.number+' '+self.file_index[result[0]]+'\n')
-                print()
 
     def parse(self, query_path, vocab_index):
         self.queries = Query.parse(query_path, vocab_index, self.index)
