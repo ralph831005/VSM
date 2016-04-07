@@ -6,27 +6,45 @@ import sys
 from collections import defaultdict
 from vsm_sparse import VSM
 
-invert_file_path = '/tmp3/ralph831005/IR/model/inverted-file'
-file_list = '/tmp3/ralph831005/IR/model/file-list'
-vocal_all = '/tmp3/ralph831005/IR/model/vocab.all'
-train_path = '/tmp3/ralph831005/IR/query/query-train.xml'
-test_path = '/tmp3/ralph831005/IR/query/query-test.xml'
-ans = '/tmp3/ralph831005/IR/query/ans-train'
-output_train = 'simple_train_vsm.txt'
-output_test = 'simple_test_vsm.txt'
+def parse_command():
+    command = dict()
+    if '-r' in sys.argv:
+        command['-r'] = True
+    else:
+        command['-r'] = False
+    outfile = sys.argv.index('-o')
+    command['-o'] = sys.argv[outfile+1]
+    outfile = sys.argv.index('-i')
+    command['-i'] = sys.argv[outfile+1]
+    outfile = sys.argv.index('-m')
+    command['-m'] = sys.argv[outfile+1]
+    outfile = sys.argv.index('-d')
+    command['-d'] = sys.argv[outfile+1]
+    return command
+
 def main():
     vocab_index = dict()
+    command = parse_command()
+    train_path = '/tmp3/ralph831005/IR/query/query-train.xml'
+    ans = '/tmp3/ralph831005/IR/query/ans-train'
+    output_train = 'simple_train_vsm.txt'
+    invert_file_path = command['-d'] + 'inverted-file'
+    file_list = command['-d'] + 'file-list'
+    vocal_all = command['-d'] + 'vocab.all'
+    output_test = command['-o']
+    test_path = command['-i']
     with open(vocal_all) as fp:
         for i, vocab in enumerate(fp):
             vocab_index[vocab.strip()] = i
 
-    #vsm = VSM(invert_file_path, file_list)
-    vsm = VSM('test.in', file_list)
+    vsm = VSM(invert_file_path, file_list)
+    #vsm = VSM('test.in', file_list)
     vsm.weight(tf_func = lambda tf, mtf: float(tf))
+    vsm.lsi()
     vsm.parse(train_path, vocab_index)
-    vsm.rank(output_train)
+    vsm.rank(output_train, command['-r'])
     vsm.parse(test_path, vocab_index)
-    vsm.rank(output_test)
+    vsm.rank(output_test, command['-r'])
     print(eval(ans, output_train))
 def apk(actual, predicted):
     k = min(100, len(predicted))
