@@ -31,9 +31,9 @@ class VSM:
         with open(self.file_list) as fp:
             self.file_index = [line.strip().split('/')[-1].lower() for line in fp]
     def weight(self, tf_func=lambda tf, mtf: 0.5 * (float(tf)/float(mtf))):
-        out_data = '/tmp3/ralph831005/IR/coo_weight.npy'
-        out_index = '/tmp3/ralph831005/IR/index.binary'
-        out_length = '/tmp3/ralph831005/IR/length.npy'
+        out_data = '/tmp2/Ralph/IR/coo_weight.npy'
+        out_index = '/tmp2/Ralph/IR/index.binary'
+        out_length = '/tmp2/Ralph/IR/length.npy'
         print('weighting start')
         if os.path.exists(out_data):
             self.index = load_obj(out_index)
@@ -72,9 +72,9 @@ class VSM:
         print('weighting done')
     def lsi(self, n_sigular_value=200):
         print('lsi start')
-        out_u = '/tmp3/ralph831005/IR/u.npy'
-        out_inv_sigma = '/tmp3/ralph831005/IR/sig.npy'
-        out_v = '/tmp3/ralph831005/IR/v.npy'
+        out_u = '/tmp2/Ralph/IR/u.npy'
+        out_inv_sigma = '/tmp2/Ralph/IR/sig.npy'
+        out_v = '/tmp2/Ralph/IR/v.npy'
         if os.path.exists(out_v) and os.path.exists(out_inv_sigma) and os.path.exists(out_u):
             self.tf_idf = np.load(out_u)
             self.reduce_mapping = np.load(out_v)
@@ -99,7 +99,6 @@ class VSM:
             print(similarity)
             similarity = similarity[0,0]
         '''
-        print(similarity)
         for i in range(total_doc):
             if self.length[i] == 0:
                 similarity[i] = 0
@@ -107,7 +106,7 @@ class VSM:
                 similarity[i] = similarity[i]/(self.length[i])/(query.length)
         return sorted(list(zip(range(total_doc), similarity)), key=lambda x: x[1], reverse=True)
     def rocchio_feedback(self, query, alpha, beta, pseudo_threshold = 10):
-        adjust = sparse.dok_matrix((1, len(self.tf_idf[0])))
+        adjust = sparse.dok_matrix((1, self.tf_idf.shape[1]))
         for result in self.cosine_similarity(query)[:pseudo_threshold]:
             adjust = adjust+self.tf_idf[result[0]]
         query.sparse = ((alpha * query.sparse.transpose()) + ((beta / pseudo_threshold) * adjust)).transpose()

@@ -25,8 +25,8 @@ def parse_command():
 def main():
     vocab_index = dict()
     command = parse_command()
-    train_path = '/tmp3/ralph831005/IR/query/query-train.xml'
-    ans = '/tmp3/ralph831005/IR/query/ans-train'
+    train_path = '/tmp2/Ralph/IR/queries/query-train.xml'
+    ans = '/tmp2/Ralph/IR/queries/ans-train'
     output_train = 'simple_train_vsm.txt'
     invert_file_path = command['-d'] + 'inverted-file'
     file_list = command['-d'] + 'file-list'
@@ -40,11 +40,10 @@ def main():
     vsm = VSM(invert_file_path, file_list)
     #vsm = VSM('test.in', file_list)
     vsm.weight(tf_func = lambda tf, mtf: float(tf))
-    vsm.lsi()
     vsm.parse(train_path, vocab_index)
-    vsm.rank(output_train, command['-r'])
+    vsm.rank(output_train, command['-r'], lsi=False)
     vsm.parse(test_path, vocab_index)
-    vsm.rank(output_test, command['-r'])
+    vsm.rank(output_test, command['-r'], lsi=False)
     print(eval(ans, output_train))
 def apk(actual, predicted):
     k = min(100, len(predicted))
