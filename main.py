@@ -37,22 +37,26 @@ def main():
         for i, vocab in enumerate(fp):
             vocab_index[vocab.strip()] = i
 
+    
     vsm = VSM(invert_file_path, file_list, command['-m'])
-    #vsm = VSM('test.in', file_list)
-    vsm.weight()
+    vsm.weight(cache = False, tf_func = lambda tf, k, b, d, k3=2.0: (tf * (k+1.0))/(tf + k*(1-b+b*d))*(k3+1)*tf/(k3*tf))
+    output_train = 'train_bm25_k3_20_nofeed.txt'
+    output_test = 'test_bm25_k3_20_nofeed.txt'
     vsm.parse(train_path, vocab_index)
     vsm.rank(output_train, command['-r'], lsi = False, alpha=0.9, beta=0.1, pseudo_threshold=3)
     vsm.parse(test_path, vocab_index)
     vsm.rank(output_test, command['-r'], lsi = False, alpha=0.9, beta=0.1, pseudo_threshold=3)
+    print(eval(ans, output_train))
+    
 
     '''
-    for i in range(1, 10):
+    for i in range(1, 11):
         vsm.parse(train_path, vocab_index)
-        vsm.rank('train_rocchio_a_0.9_b_0.1_k_'+str(i)+'.txt', command['-r'], lsi=False, alpha=0.9, beta=0.1, pseudo_threshold=i)
-        print(eval(ans, 'train_rocchio_a_0.9_b_0.1_k_'+str(i)+'.txt'))
+        vsm.rank('train_rocchio_k_'+str(i)+'.txt', command['-r'], lsi=False, alpha=0.9, beta=0.1, pseudo_threshold=i)
+        print(eval(ans, 'train_rocchio_k_'+str(i)+'.txt'))
         vsm.parse(test_path, vocab_index)
-        vsm.rank('test_rocchio_a_0.9_b_0.1_k_'+str(i)+'.txt', command['-r'], lsi=False, alpha=0.9, beta=0.1, pseudo_threshold=i)
-        '''
+        vsm.rank('test_rocchio_k_'+str(i)+'.txt', command['-r'], lsi=False, alpha=0.9, beta=0.1, pseudo_threshold=i)
+    '''
 def apk(actual, predicted):
     k = min(100, len(predicted))
     score, count = 0, 0
