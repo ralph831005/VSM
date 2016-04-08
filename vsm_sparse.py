@@ -7,6 +7,7 @@ from collections import defaultdict
 from query_sparse import Query
 from scipy import sparse
 import scipy.sparse.linalg as la
+import glob
 total_doc = 46972
 total_grams = 1193467
 def save_obj(obj, name):
@@ -16,7 +17,7 @@ def load_obj(name):
     with open(name, 'rb') as fp:
         return pickle.load(fp)
 class VSM:
-    def __init__(self, invert_file_path, file_list):
+    def __init__(self, invert_file_path, file_list, file_directory):
         self.invert_file_path = invert_file_path
         self.file_list = file_list
 
@@ -30,10 +31,19 @@ class VSM:
         self.file_index = None
         with open(self.file_list) as fp:
             self.file_index = [line.strip().split('/')[-1].lower() for line in fp]
-    def weight(self, tf_func=lambda tf, mtf: 0.5 * (float(tf)/float(mtf))):
-        out_data = '/tmp2/Ralph/IR/coo_weight.npy'
-        out_index = '/tmp2/Ralph/IR/index.binary'
-        out_length = '/tmp2/Ralph/IR/length.npy'
+        tmp_file_length = dict()
+        for f in glob.glob(file_directory+'*/*/*'):
+            with open(f) as fp:
+                lines = ''.join([x.strip() for x in fp.readlines()])
+                title = lines.split('<title>')[1].split('</title>')[0].strip()
+                p = ''.join([x.split('</p>')[0] for x in lines.split('<p>')[1:]])
+                tmp_file_length[f.split('/')[-1].lower()] = len(p) + len(title)
+        self.file_length = [tmp_file_length[x] for x in self.file_index]
+        self.avg_length = np.mean(self.file_length)
+    def weight(self, tf_func=lambda tf, k, b, d: (tf * (k+1.0))/(tf + k*(1-b+b*d)), idf_func=lambda N, nq: math.log((N - nq + 0.5)/(nq+0.5))):
+        out_data = '/tmp3/ralph831005/IR/coo_weight.npy'
+        out_index = '/tmp3/ralph831005/IR/index.binary'
+        out_length = '/tmp3/ralph831005/IR/length.npy'
         print('weighting start')
         if os.path.exists(out_data):
             self.index = load_obj(out_index)
@@ -54,13 +64,12 @@ class VSM:
                 if (int(bigram[0])*100000 + int(bigram[1])) in  self.index:
                     tmp = self.index[int(bigram[0])*100000 + int(bigram[1])]
                 self.index[int(bigram[0])*100000 + int(bigram[1])] = tmp
-                self.idf[tmp] = math.log(total_doc/float(bigram[2]))
+                self.idf[tmp] = idf_func(total_doc, float(bigram[2]))
                 lines = [[int(x) for x in inverted_file.readline().strip().split()] for i in range(int(bigram[2]))]
                 max_tf = max(list(zip(*lines))[1])
                 for doc in lines:
-                    #self.tf_idf[doc[0]][tmp] = tf_func(doc[1], max_tf) * self.idf[tmp]
-                    data.append((doc[0], tmp, tf_func(doc[1], max_tf) * self.idf[tmp]))
-                    self.length[doc[0]] += (tf_func(doc[1], max_tf) * self.idf[tmp])**2
+                    data.append((doc[0], tmp, tf_func(doc[1], 1.2, 0.75, float(self.file_length[doc[0]])/self.avg_length) * self.idf[tmp]))
+                    self.length[doc[0]] += data[-1][-1]**2
                 counter += 1
         for i in range(len(self.length)):
             self.length[i] = (self.length[i]**(0.5))
@@ -72,9 +81,9 @@ class VSM:
         print('weighting done')
     def lsi(self, n_sigular_value=200):
         print('lsi start')
-        out_u = '/tmp2/Ralph/IR/u.npy'
-        out_inv_sigma = '/tmp2/Ralph/IR/sig.npy'
-        out_v = '/tmp2/Ralph/IR/v.npy'
+        out_u = '/tmp3/ralph831005/IR/u.npy'
+        out_inv_sigma = '/tmp3/ralph831005/IR/sig.npy'
+        out_v = '/tmp3/ralph831005/IR/v.npy'
         if os.path.exists(out_v) and os.path.exists(out_inv_sigma) and os.path.exists(out_u):
             self.tf_idf = np.load(out_u)
             self.reduce_mapping = np.load(out_v)
@@ -110,14 +119,15 @@ class VSM:
         for result in self.cosine_similarity(query)[:pseudo_threshold]:
             adjust = adjust+self.tf_idf[result[0]]
         query.sparse = ((alpha * query.sparse.transpose()) + ((beta / pseudo_threshold) * adjust)).transpose()
-    def rank(self, output, rocchio, lsi = True):
+    def rank(self, output, rocchio, lsi = True, alpha=0.9, beta=0.2, pseudo_threshold=10):
         print('ranking...')
+        print('alpha = ', alpha, 'beta = ', beta)
         with open(output, 'w') as fp:
             for query in self.queries:
                 if lsi:
                     query.sparse = query.sparse.transpose().dot(self.reduce_mapping).dot(self.sigma).transpose()
                 if rocchio:
-                    self.rocchio_feedback(query, 0.9, 0.2)
+                    self.rocchio_feedback(query, alpha, beta, pseudo_threshold)
                 for result in self.cosine_similarity(query)[:100]:
                     fp.write(query.number+' '+self.file_index[result[0]]+'\n')
 

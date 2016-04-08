@@ -25,8 +25,8 @@ def parse_command():
 def main():
     vocab_index = dict()
     command = parse_command()
-    train_path = '/tmp2/Ralph/IR/queries/query-train.xml'
-    ans = '/tmp2/Ralph/IR/queries/ans-train'
+    train_path = '/tmp3/ralph831005/IR/query/query-train.xml'
+    ans = '/tmp3/ralph831005/IR/query/ans-train'
     output_train = 'simple_train_vsm.txt'
     invert_file_path = command['-d'] + 'inverted-file'
     file_list = command['-d'] + 'file-list'
@@ -37,14 +37,22 @@ def main():
         for i, vocab in enumerate(fp):
             vocab_index[vocab.strip()] = i
 
-    vsm = VSM(invert_file_path, file_list)
+    vsm = VSM(invert_file_path, file_list, command['-m'])
     #vsm = VSM('test.in', file_list)
-    vsm.weight(tf_func = lambda tf, mtf: float(tf))
+    vsm.weight()
     vsm.parse(train_path, vocab_index)
-    vsm.rank(output_train, command['-r'], lsi=False)
+    vsm.rank(output_train, command['-r'], lsi = False, alpha=0.9, beta=0.1, pseudo_threshold=3)
     vsm.parse(test_path, vocab_index)
-    vsm.rank(output_test, command['-r'], lsi=False)
-    print(eval(ans, output_train))
+    vsm.rank(output_test, command['-r'], lsi = False, alpha=0.9, beta=0.1, pseudo_threshold=3)
+
+    '''
+    for i in range(1, 10):
+        vsm.parse(train_path, vocab_index)
+        vsm.rank('train_rocchio_a_0.9_b_0.1_k_'+str(i)+'.txt', command['-r'], lsi=False, alpha=0.9, beta=0.1, pseudo_threshold=i)
+        print(eval(ans, 'train_rocchio_a_0.9_b_0.1_k_'+str(i)+'.txt'))
+        vsm.parse(test_path, vocab_index)
+        vsm.rank('test_rocchio_a_0.9_b_0.1_k_'+str(i)+'.txt', command['-r'], lsi=False, alpha=0.9, beta=0.1, pseudo_threshold=i)
+        '''
 def apk(actual, predicted):
     k = min(100, len(predicted))
     score, count = 0, 0
