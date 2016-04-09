@@ -93,15 +93,6 @@ class VSM:
         print('lsi done')
     def cosine_similarity(self, query):
         similarity = np.transpose(sparse.csr_matrix(self.tf_idf.dot(query.sparse)).toarray())[0]
-        '''
-        try:
-            similarity = np.transpose(similarity.toarray())[0]
-        except:
-            print('in')
-            similarity = np.transpose(similarity)
-            print(similarity)
-            similarity = similarity[0,0]
-        '''
         for i in range(total_doc):
             if self.length[i] == 0:
                 similarity[i] = 0

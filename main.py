@@ -39,14 +39,14 @@ def main():
 
     
     vsm = VSM(invert_file_path, file_list, command['-m'])
-    vsm.weight(cache = False, tf_func = lambda tf, k, b, d, k3=2.0: (tf * (k+1.0))/(tf + k*(1-b+b*d))*(k3+1)*tf/(k3*tf))
-    output_train = 'train_bm25_k3_20_nofeed.txt'
-    output_test = 'test_bm25_k3_20_nofeed.txt'
+    vsm.weight()
     vsm.parse(train_path, vocab_index)
-    vsm.rank(output_train, command['-r'], lsi = False, alpha=0.9, beta=0.1, pseudo_threshold=3)
+    vsm.rank(output_train, command['-r'], lsi = False, alpha=0.9, beta=0.1, pseudo_threshold=9)
     vsm.parse(test_path, vocab_index)
-    vsm.rank(output_test, command['-r'], lsi = False, alpha=0.9, beta=0.1, pseudo_threshold=3)
+    vsm.rank(output_test, command['-r'], lsi = False, alpha=0.9, beta=0.1, pseudo_threshold=9)
     print(eval(ans, output_train))
+    
+
     
 
     '''
